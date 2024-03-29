@@ -1,14 +1,11 @@
 import './App.css';
-
+import Navbar from "./Components/Navbar";
+import Contacts from "./Components/Contact/Contacts";
 const App = () => {
   return (
     <div className="App">
-      <h3 >مدیریت مخاطبین</h3>
-
-        <button className='btn btn-secondary'>
-          <span className="fa fa-user fa-2x px-2"></span>
-          بزن بریم!
-        </button>
+      <Navbar />
+      <Contacts/>
     </div>
   );
 }
