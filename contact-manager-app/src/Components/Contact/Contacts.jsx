@@ -4,13 +4,17 @@ import  NotFound from "../../Assets/no-found.gif";
 import contact from "./Contact";
 import Spinner from "../Spinner";
 import {Link} from "react-router-dom";
-const Contacts = ({contacts, loading}) => {
+import {useContext} from "react";
+import {contactContext} from "../../Context/contactContext";
+
+const Contacts = () => {
+    const {loading,filteredContacts,deleteContact} = useContext(contactContext);
     return(
         <>
            <section className="container">
                <div className="row">
                    <div className="col">
-                       <p className="h3 mt-2">
+                       <p className="h3 float-end mt-2">
                            <Link to={"/contacts/add"} className="btn mx-2" style={{backgroundColor:Pink}}>
                                ساخت مخاطب جدید
                                <i className="fas fa-plus-circle mx-2"></i>
@@ -23,10 +27,9 @@ const Contacts = ({contacts, loading}) => {
                 loading ? <Spinner /> : (
                     <section className="container row">
 
-                            {
-                                contacts.length > 0 ? contacts.map(c => (
+                            {filteredContacts.length > 0 ? filteredContacts.map(c => (
 
-                                        <Contact key={c.id} contact={c}/>
+                                        <Contact key={c.id} contact={c} deleteContact={() => deleteContact(c.id,c.fullname)}/>
 
                                     )) :
                                     (
