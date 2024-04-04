@@ -1,23 +1,20 @@
 import './App.css';
-import React, {useState,useEffect} from "react";
+import React, {useEffect} from "react";
 import {Routes,Route,Navigate,useNavigate} from 'react-router-dom';
 import {AddContact,EditContact,Contacts,Contact,Navbar,ViewContact} from "./Components";
 import {createContact, getAllContacts, getAllGroups,deleteContact} from "./Services/contactService";
 import  {confirmAlert} from 'react-confirm-alert';
 import {CurrentLine, Cyan, Foreground, Purple, Yellow} from "./Helpers/colors";
-
 import {contactContext}  from "./Context/contactContext";
-import data from "bootstrap/js/src/dom/data";
 import _ from 'lodash';
-import {contactSchema} from "./Validations/contactValidation";
+import {useImmer} from "use-immer";
+import {ToastContainer,toast} from "react-toastify";
 
 const App = () => {
-    const [loading,setLoading] = useState(false);
-    const [contacts,setContacts] = useState([]);
-    const [filteredContacts, setFilteredContacts] = useState([]);
-    const [groups,setGroups] = useState([]);
-    const [contact, setContact] = useState({});
-    //const [errors, setErrors] = useState([]);
+    const [loading,setLoading] = useImmer(false);
+    const [contacts,setContacts] = useImmer([]);
+    const [filteredContacts, setFilteredContacts] = useImmer([]);
+    const [groups,setGroups] = useImmer([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -41,24 +38,21 @@ const App = () => {
         fetchData();
     }, []);
     const createContactForm = async (values) => {
-        //event.preventDefault();
-
-
         try {
             setLoading((prevLoading) => !prevLoading);
 
-           // await contactSchema.validate(contact, {abortEarly:false});
             const { status,data } = await createContact(values);
 
-
             if (status === 201) {
+                toast.success("مخاطب با موفقیت ساخته شد");
                 const allContacts = [... contacts, data];
 
                 setContacts(allContacts);
                 setFilteredContacts(allContacts);
 
-               // setContact({});
-               // setErrors([]);
+                setContacts((draft) => {draft.push(data)});
+                setFilteredContacts((draft) => {draft.push(data)});
+
                 setLoading((prevLoading) => !prevLoading);
                 navigate("/contacts");
             }
@@ -68,13 +62,6 @@ const App = () => {
             setLoading((prevLoading) => !prevLoading);
         }
     };
-    const onContactChange = (event) => {
-        setContact({
-            ...contact,
-            [event.target.name]: event.target.value,
-        });
-    };
-
     const confirmِDelete = (contactId, contactFullname) => {
         confirmAlert({
             customUI: ({ onClose }) => {
@@ -116,59 +103,49 @@ const App = () => {
     };
 
     const removeContact = async (contactId) => {
-        const allContacts = [...contacts];
+        const contactsBackup = [...contacts];
+
         try {
-            /*
-            * way 4 : Delete State Before Server REquest
-            * */
-            //contact Copy
+
             const updatedContact = contacts.filter(c => c.id !== contactId);
             setContacts(updatedContact);
             setFilteredContacts(updatedContact);
 
-            //sending Delete Request To Server
+           setContacts(draft => contacts.filter(c=>c.id !== contactId));
+           setFilteredContacts(draft => contacts.filter(c=>c.id !== contactId));
             const {status} = await deleteContact(contactId);
+            toast.error("مخاطب با موفقیت حذف شد");
             if (status !== 200) {
-                setContacts(allContacts);
-                setFilteredContacts(allContacts);
+                setContacts(contactsBackup);
+                setFilteredContacts(contactsBackup);
             }
         } catch (err) {
             console.log(err.message);
-            setContacts(allContacts);
-            setFilteredContacts(allContacts);
+            setContacts(contactsBackup);
+            setFilteredContacts(contactsBackup);
         }
     };
     let filterTimeOut;
     const contactSearch = _.debounce(query => {
-       // clearTimeout(filterTimeOut);
         if (!query) return setFilteredContacts([...contacts]);
-        //filterTimeOut = setTimeout(() => {
-            setFilteredContacts(contacts.filter((contact) => {
-                return contact.fullname
-                    .toLowerCase()
-                    .includes(query.toLowerCase());
-            }));
-        //},1000);
 
+setFilteredContacts(draft => draft.filter(c => c.fullname.toLowerCase().includes(query.toLowerCase())))
     },1000);
   return (
       <contactContext.Provider value={{
           loading,
           setLoading,
-          contact,
-          setContact,
           setContacts,
           contacts,
           filteredContacts,
           setFilteredContacts,
           groups,
-          //errors,
-          onContactChange,
           deleteContact:confirmِDelete,
           createContact:createContactForm,
           contactSearch,
       }}>
           <div className="App">
+              <ToastContainer position="top-right" rtl={true} theme="colored"/>
               <Navbar/>
               <Routes>
                   <Route path="/" element={<Navigate to="/contacts"/>}/>
