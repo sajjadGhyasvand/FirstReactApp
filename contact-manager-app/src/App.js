@@ -8,6 +8,8 @@ import {CurrentLine, Cyan, Foreground, Purple, Yellow} from "./Helpers/colors";
 
 import {contactContext}  from "./Context/contactContext";
 import data from "bootstrap/js/src/dom/data";
+import _ from 'lodash';
+import {contactSchema} from "./Validations/contactValidation";
 
 const App = () => {
     const [loading,setLoading] = useState(false);
@@ -15,6 +17,7 @@ const App = () => {
     const [filteredContacts, setFilteredContacts] = useState([]);
     const [groups,setGroups] = useState([]);
     const [contact, setContact] = useState({});
+    //const [errors, setErrors] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,47 +40,31 @@ const App = () => {
         };
         fetchData();
     }, []);
-   /* useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
+    const createContactForm = async (values) => {
+        //event.preventDefault();
 
-                const { data: contactsData } = await getAllContacts();
-                const { data: groupsData } = await getAllGroups();
 
-                setContacts(contactsData);
-                setFilteredContacts(contactsData);
-                setGroups(groupsData);
-
-                setLoading(false);
-            } catch (err) {
-                console.log(err.message);
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [forceRender]);*/
-    const createContactForm = async (event) => {
-        event.preventDefault();
         try {
             setLoading((prevLoading) => !prevLoading);
-            const { status,data } = await createContact(contact);
-            /*
-            * Note
-            * 1-
-            * */
+
+           // await contactSchema.validate(contact, {abortEarly:false});
+            const { status,data } = await createContact(values);
+
+
             if (status === 201) {
                 const allContacts = [... contacts, data];
 
                 setContacts(allContacts);
                 setFilteredContacts(allContacts);
 
-                setContact({});
+               // setContact({});
+               // setErrors([]);
                 setLoading((prevLoading) => !prevLoading);
                 navigate("/contacts");
             }
         } catch (err) {
             console.log(err.message);
+            //console.log(err.inner);
             setLoading((prevLoading) => !prevLoading);
         }
     };
@@ -152,18 +139,18 @@ const App = () => {
         }
     };
     let filterTimeOut;
-    const contactSearch = (query) => {
+    const contactSearch = _.debounce(query => {
+       // clearTimeout(filterTimeOut);
         if (!query) return setFilteredContacts([...contacts]);
-        clearTimeout(filterTimeOut);
-        filterTimeOut = setTimeout(() => {
+        //filterTimeOut = setTimeout(() => {
             setFilteredContacts(contacts.filter((contact) => {
                 return contact.fullname
                     .toLowerCase()
                     .includes(query.toLowerCase());
             }));
-        },1000);
+        //},1000);
 
-    };
+    },1000);
   return (
       <contactContext.Provider value={{
           loading,
@@ -175,11 +162,11 @@ const App = () => {
           filteredContacts,
           setFilteredContacts,
           groups,
+          //errors,
           onContactChange,
           deleteContact:confirmِDelete,
           createContact:createContactForm,
           contactSearch,
-
       }}>
           <div className="App">
               <Navbar/>
